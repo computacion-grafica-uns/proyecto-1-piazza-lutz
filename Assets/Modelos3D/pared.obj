@@ -20,9 +20,13 @@ v 0   6	  0		# 15
 v 0   6	  2.5	# 16
 v 0   1.8 2.5	# 17
 v 0   1   2.5   # 18
-v 0   
-v 0   
-v 0   
+v 0   3.9 0		# 19
+v 0   6   1.25	# 20
+v 0   3.9 2.5	# 21
+v 0   5   2		# 22
+v 0   3.2 2		# 23
+v 0   5   1.2	# 24
+v 0   3.2 1.2	# 25
 
 # Caras (cada cara se compone de 3 vértices, en sentido antihorario)
 # Cara de la puerta principal
@@ -37,6 +41,16 @@ f 1 18 8
 f 11 18 1
 f 12 17 18
 f 13 17 12
-f 14 16 17
-f 15 16 14
+f 23 17 13	# aca empieza la parte de la ventana que es un "lio"
+f 23 13 25
+f 13 14 25
+f 25 14 19
+f 25 19 15
+f 25 15 24
+f 15 20 24
+f 20 22 24
+f 20 16 22
+f 22 16 21
+f 22 21 23
+f 21 17 23
 # Cara de la v
