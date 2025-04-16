@@ -1,0 +1,42 @@
+# Habitación de 2.5m x 6m x 15m
+o Pared
+
+# Vértices
+v 0   0   0		# 1
+v 7.9 0   0		# 2
+v 7.9 0   2		# 3
+v 8.3 0   2		# 4
+v 8.3 0   0		# 5
+v 15  0   0		# 6
+v 15  0   2.5	# 7
+v 0   0   2.5	# 8
+v 7.9 0   2.5	# 9
+v 8.3 0   2.5	# 10
+v 0   1   0		# 11
+v 0   1   2		# 12
+v 0   1.8 2		# 13
+v 0   1.8 0 	# 14
+v 0   6	  0		# 15
+v 0   6	  2.5	# 16
+v 0   1.8 2.5	# 17
+v 0   1   2.5   # 18
+v 0   
+v 0   
+v 0   
+
+# Caras (cada cara se compone de 3 vértices, en sentido antihorario)
+# Cara de la puerta principal
+f 1  8  2
+f 2  8  9
+f 3  9  4
+f 4  9  10
+f 10 6  5
+f 6  10 7
+# Cara de la puerta del baño
+f 1 18 8
+f 11 18 1
+f 12 17 18
+f 13 17 12
+f 14 16 17
+f 15 16 14
+# Cara de la v
