@@ -1,0 +1,20 @@
+# Habitación de 2.5m x 6m x 15m
+o Pared
+
+# Vértices
+v 0   0   0
+v 2.5 0   0
+v 2.5 6   0
+v 0   6   0
+v 0   0   15
+v 2.5 0   15
+v 2.5 6   15
+v 0   6   15
+
+# Caras (cada cara se compone de 4 vértices, en sentido antihorario)
+f 1 2 3 4  # Cara trasera
+f 5 6 7 8  # Cara delantera
+f 1 5 8 4  # Cara izquierda
+f 2 6 7 3  # Cara derecha
+f 4 3 7 8  # Cara superior
+f 1 2 6 5  # Cara inferior
