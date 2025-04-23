@@ -62,7 +62,7 @@ public class FileReader
         //Inicializo el color de los vertices
         colores = new Color[cantVert];
         vertices = new Vector3[cantVert];
-        triangles = new int[cantTrig*3]; 
+        triangles = new int[cantTrig*6]; 
 
         Debug.Log("Cantidad triangulos: " + cantTrig);
         Debug.Log("Cantidad vertices: " + cantVert);
@@ -103,20 +103,18 @@ public class FileReader
                 if(lines[i].StartsWith("f "))
                 {
                     string[] cara = lines[i].Split(' '); //Separo los vertices
+                    int[] quadIndices = new int[3];
+                    for(int j = 0; j < 3; j++)
+                    {
+                        string[] partes = cara[j+1].Split('/');
+                        quadIndices[j] = int.Parse(partes[0])-1;
+                    }
 
-                    string[] verticesCaras = cara[1].Split('/'); //Separo v, vt y vn
-                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
-                    posTrig++;
+                    triangles[posTrig++] = quadIndices[0];
+                    triangles[posTrig++] = quadIndices[1];
+                    triangles[posTrig++] = quadIndices[2];
+                
 
-                    verticesCaras = cara[2].Split('/'); //Separo v, vt y vn
-                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
-                    posTrig++;
-
-                    verticesCaras = cara[3].Split('/'); //Separo v, vt y vn
-                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
-                    posTrig++;
-
-                   
                 }
             }
         }
@@ -130,11 +128,8 @@ public class FileReader
             vertices[i].y = vertices[i].y - reposy;
             vertices[i].z = vertices[i].z - reposz;
 
-            colores[i] = new Color(1f, 0.5f, 0.5f);
+            colores[i] = new Color(0.5f, 0.5f, 0.5f);
         }
-
-        Debug.Log("Contenido de vertices: " + string.Join(", ", vertices));
-        Debug.Log("Contenido de triangles: " + string.Join(", ", triangles));
         
     }
 
@@ -150,5 +145,15 @@ public class FileReader
     {
         Material material = new Material(Shader.Find("ShaderBasico1"));
         obj.GetComponent<MeshRenderer>().material = material;
+    }
+
+    public void setColor(float r, float g, float b)
+    {
+        colores = new Color[cantVert];
+        for(int i = 0; i < cantVert; i++)
+        {
+            colores[i] = new Color(r,g,b,1);
+        }
+        obj.GetComponent<MeshFilter>().mesh.colors = colores;
     }
 }
