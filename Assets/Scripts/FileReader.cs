@@ -5,67 +5,150 @@ using System.Globalization;
 using System.IO;
 using UnityEngine;
 
-
-
-public class FileReader : MonoBehaviour
+public class FileReader
 {
-   // Start is called before the first frame update
-    void Start()
-    {
-        string fileName = "objeto";
-        string path = "Assets/Modelos3D/" + fileName + ".obj";
+    private GameObject obj;
+    private Color[] colores;
+    private Vector3[] vertices;
+    private int[] triangles;
+    private int cantVert = 0;
+    private int cantTrig = 0;
+    private float minX, maxX, minY, maxY, minZ, maxZ = 0f;
+
+    public void read(String fileName){
+        String path = "Assets/Modelos3D/" + fileName + ".obj";
 
         StreamReader reader = new StreamReader(path);
         string fileData = (reader.ReadToEnd());
 
+        ReadEachLine(fileData);
+
         reader.Close();
-        
-        Debug.Log(fileData);
+
+        obj = new GameObject(fileName);
+        obj.AddComponent<MeshFilter>();
+        obj.GetComponent<MeshFilter>().mesh = new Mesh();
+        obj.AddComponent<MeshRenderer>();
+
+        UpdateMesh();
+        CreateMaterial();
     }
 
-    // Update is called once per frame
-    void Update()
+    public GameObject getGameObject()
     {
-        
+        return obj;
     }
 
-    void ReadEachLine(string fileData)
+    private void ReadEachLine(string fileData)
     {
-        List<Vector3> vertices = new List<Vector3>();
-        List<int[]> faces = new List<int[]>();
+        bool barrera = true; // Tomo las primeras coordenadas para comparar y centrar los objetos en el (0,0,0)
+        int posVert = 0;
+        int posTrig = 0;
+        float reposx, reposy, reposz;
 
         string[] lines = fileData.Split('\n');
+
+        //Mucho más fácil contar la cantidad de vertices y caras, luego inicializar los arreglos con esos datos :)
         for(int i = 0; i < lines.Length; i++)
         {
             if(lines[i].StartsWith("v ")){
-                String[] coords = lines[i].Split(' ');
-                if(coords.Length >= 4){
-                    float x = float.Parse(coords[1], CultureInfo.InvariantCulture);
-                    float y = float.Parse(coords[2], CultureInfo.InvariantCulture);
-                    float z = float.Parse(coords[3], CultureInfo.InvariantCulture);
-                    Vector3 vertex = new Vector3(x,y,z);
-                    vertices.Add(vertex);
-                }
-
+                cantVert++;
             }
-            else if(lines[i].StartsWith("f ")){
-                String[] face = lines[i].Split(' ');
-                if(face.Length >= 4){
-                    int[] faceIndices = new int[face.Length - 1];
-                    for (int j = 1; j < face.Length; j++)
-                    {
-                        string part = face[j];
-                        // Si la cara tiene formato con barras (v/vt/vn), quedate con el primer valor
-                        string[] vertexParts = part.Split(' ');
-                        int vertexIndex = int.Parse(vertexParts[0]);
+            if(lines[i].StartsWith("f ")){
+                cantTrig++;
+            }
+        }
 
-                        // Los índices en .obj empiezan en 1, así que restamos 1
-                        faceIndices[j - 1] = vertexIndex - 1;
-                    }
+        //Inicializo el color de los vertices
+        colores = new Color[cantVert];
+        vertices = new Vector3[cantVert];
+        triangles = new int[cantTrig*3]; 
 
-                    faces.Add(faceIndices);
+        Debug.Log("Cantidad triangulos: " + cantTrig);
+        Debug.Log("Cantidad vertices: " + cantVert);
+                    
+
+
+        for(int i = 0; i < lines.Length; i++)
+        {
+            if(lines[i].StartsWith("v "))
+            {
+                string[] coord = lines[i].Split(' ');
+
+                float x = float.Parse(coord[1], CultureInfo.InvariantCulture);
+                float y = float.Parse(coord[2], CultureInfo.InvariantCulture);
+                float z = float.Parse(coord[3], CultureInfo.InvariantCulture);
+                 
+
+                if(barrera){
+                    barrera = false; //Entra la primera vez
+
+                    minX = maxX = x;
+                    minY = maxY = y;
+                    minZ = maxZ = z;
+                }
+                else{
+                    if(x < minX) { minX = x; }
+                    if(y < minY) { minY = y; }
+                    if(z < minZ) { minZ = z; }
+                    if(x > maxX) { maxX = x; }
+                    if(y > maxY) { maxY = y; }
+                    if(z > maxZ) { maxZ = z; }
+                }
+               
+                vertices[posVert] = new Vector3(x,y,z);
+                posVert++;
+                
+            }else{
+                if(lines[i].StartsWith("f "))
+                {
+                    string[] cara = lines[i].Split(' '); //Separo los vertices
+
+                    string[] verticesCaras = cara[1].Split('/'); //Separo v, vt y vn
+                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
+                    posTrig++;
+
+                    verticesCaras = cara[2].Split('/'); //Separo v, vt y vn
+                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
+                    posTrig++;
+
+                    verticesCaras = cara[3].Split('/'); //Separo v, vt y vn
+                    triangles[posTrig] = int.Parse(verticesCaras[0]) - 1;
+                    posTrig++;
+
+                   
                 }
             }
         }
+
+        reposx = (minX + maxX)/2;
+        reposy = (minY + maxY)/2;
+        reposz = (minZ + maxZ)/2;
+
+        for(int i = 0; i < vertices.Length; i++){
+            vertices[i].x = vertices[i].x - reposx;
+            vertices[i].y = vertices[i].y - reposy;
+            vertices[i].z = vertices[i].z - reposz;
+
+            colores[i] = new Color(1f, 0.5f, 0.5f);
+        }
+
+        Debug.Log("Contenido de vertices: " + string.Join(", ", vertices));
+        Debug.Log("Contenido de triangles: " + string.Join(", ", triangles));
+        
+    }
+
+    private void UpdateMesh()
+    {    
+        obj.GetComponent<MeshFilter>().mesh.vertices = vertices;
+        obj.GetComponent<MeshFilter>().mesh.triangles = triangles;
+        obj.GetComponent<MeshFilter>().mesh.colors = colores;
+        obj.GetComponent<MeshFilter>().mesh.RecalculateNormals();
+    }
+
+    private void CreateMaterial()
+    {
+        Material material = new Material(Shader.Find("ShaderBasico1"));
+        obj.GetComponent<MeshRenderer>().material = material;
     }
 }

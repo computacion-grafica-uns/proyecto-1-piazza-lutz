@@ -1,135 +1,125 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class SceneManager : MonoBehaviour
 {
-    //arreglo para almacenar los vertices
-    private Vector3[] vertices;
-    //arreglo para almacenar los indices a los vertices
-    private int[] triangles;
     //referecia al objetoTriangulo que vamos a crear
-    private GameObject objetoTriangulo;
-
+    private GameObject objeto;
     //objeto camara
     private GameObject miCamara;
 
-    private Color[] colores;
+    private Transform t;
+    private float distancia = 10f;
+    private float velocidadRotacion = 50f;
+
+    private float anguloX = 20f; //pitch
+    private float anguloY = 0f; //Yaw
+    
+    public FileReader lector = new FileReader();
+
 
     // Start is called before the first frame update
     void Start()
     {
-        objetoTriangulo = new GameObject();
+        lector.read("cubo"); 
+        objeto = lector.getGameObject();  
+        t = objeto.transform;   
 
-        objetoTriangulo.AddComponent<MeshFilter>();
-        objetoTriangulo.GetComponent<MeshFilter>().mesh = new Mesh();
+        if (objeto == null)
+        Debug.LogError("El objeto no se generó correctamente");
+        else
+        Debug.Log("Objeto generado: " + objeto.name);  
 
-        objetoTriangulo.AddComponent<MeshRenderer>();
-
-        CreateModel();
-        UpdateMesh();
-        CreateMaterial();
-
-        CreateCamera();
-
-        Vector3 newPosition = new Vector3(0,0,0); // definimos una traslacion 
-        Vector3 newRotation = new Vector3(0, 0, 0); // Rotamos 45 en el eje Y
-        Vector3 newScale = new Vector3(1f,1f,1f); // Definimos un escalado
-
-        //Calculamos la matrix de modelado
-        Matrix4x4 modelMatrix = CreateModelMatrix1(newPosition, newRotation, newScale);
-
-        //Le decimos al shader que utilice esta matriz de modelado
-        objetoTriangulo.GetComponent<Renderer>().material.SetMatrix("_ModelMatrix", modelMatrix);
         
+        CreateCamera();
+        RecalcularMatrices();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+          // Movimiento con flechas del teclado
+        if (Input.GetKey(KeyCode.UpArrow)) anguloX -= velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.DownArrow)) anguloX += velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.LeftArrow)) anguloY -= velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.RightArrow)) anguloY += velocidadRotacion * Time.deltaTime;
+
+        // Limitar pitch (evita que se dé vuelta completamente)
+        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
+
+        RecalcularMatrices();
     }
 
-    private void CreateModel()
-    {
-        FileReader lector = new FileReader();
-
-    }
-
-    private void UpdateMesh()
-    {    
-        objetoTriangulo.GetComponent<MeshFilter>().mesh.vertices = vertices;
-        objetoTriangulo.GetComponent<MeshFilter>().mesh.triangles = triangles;
-        objetoTriangulo.GetComponent<MeshFilter>().mesh.colors = colores;
-    }
-
-    private void CreateCamera()
+     private void CreateCamera()
     {
         miCamara = new GameObject();
         miCamara.AddComponent<Camera>();
-        miCamara.transform.position = new Vector3(0,0,-50);
-        miCamara.transform.rotation = Quaternion.Euler(0,0,0);
 
         miCamara.GetComponent<Camera>().clearFlags = CameraClearFlags.SolidColor;
         miCamara.GetComponent<Camera>().backgroundColor = Color.black;
+
     }
 
-    private void CreateMaterial()
+    private void RecalcularMatrices()
     {
-        Material newMaterial = new Material(Shader.Find("ShaderBasico"));
+        float RadX = Mathf.Deg2Rad*anguloX;
+        float RadY = Mathf.Deg2Rad*anguloY;
 
-        objetoTriangulo.GetComponent<MeshRenderer>().material = newMaterial;
+        Vector3 offset = new Vector3(
+            distancia * MathF.Cos(RadX) * Mathf.Sin(RadY),
+            distancia * Mathf.Sin(RadX),
+            distancia * Mathf.Cos(RadX) * Mathf.Cos(RadY)
+            );
+
+        Vector3 pos = t.position + offset; 
+        Vector3 up = Vector3.up;
+       
+        Matrix4x4 viewMatrix = CreateViewMatrix(pos, t.position, up);
+        objeto.GetComponent<Renderer>().material.SetMatrix("_ViewMatrix", viewMatrix);
+
+        float fov = 90;
+        float aspectRatio = 16 / (float)9;
+        float nearClipPlane = 0.1f;
+        float farClipPlane = 1000;
+
+        Matrix4x4 projectionMatrix = CalculatePerspectiveProjectionMatrix(fov, aspectRatio, nearClipPlane, farClipPlane);
+        objeto.GetComponent<Renderer>().material.SetMatrix("_ProjectionMatrix", GL.GetGPUProjectionMatrix(projectionMatrix, true));
+
+        miCamara.transform.position = pos;
+        miCamara.transform.LookAt(t.position);
     }
 
-    private Matrix4x4 CreateModelMatrix1(Vector3 newPosition, Vector3 newRotation, Vector3 newScale)
+    private Matrix4x4 CreateViewMatrix(Vector3 pos, Vector3 targ, Vector3 up)
     {
-        Matrix4x4 positionMatrix = new Matrix4x4(
-            new Vector4(1f, 0f, 0f, newPosition.x),
-            new Vector4(0f, 1f, 0f, newPosition.y),
-            new Vector4(0f, 0f, 1f, newPosition.z),
+        Vector3 forward = (targ - pos).normalized;
+        Vector3 right = Vector3.Cross(forward,up).normalized;
+        Matrix4x4 finalMatrix =  new Matrix4x4(
+            new Vector4(right.x, right.y, right.z, Vector3.Dot(-right,pos)),
+            new Vector4(up.x, up.y, up.z, Vector3.Dot(-up, pos)),
+            new Vector4(-forward.x, -forward.y, -forward.z, Vector3.Dot(forward, pos)),
             new Vector4(0f, 0f, 0f, 1f)
         );
-        positionMatrix = positionMatrix.transpose;
-
-        Matrix4x4 rotationMatrixX = new Matrix4x4(
-            new Vector4(1f, 0f, 0f, 0f),
-            new Vector4(0f, Mathf.Cos(newRotation.x), -Mathf.Sin(newRotation.x), 0f),
-            new Vector4(0f, Mathf.Sin(newRotation.x), Mathf.Cos(newRotation.x), 0f),
-            new Vector4(0f, 0f, 0f, 1f)
-        );
-
-         Matrix4x4 rotationMatrixY = new Matrix4x4(
-            new Vector4(MathF.Cos(newRotation.y), 0f, Mathf.Sin(newRotation.y), 0f),
-            new Vector4(0f, 1f, 0f, 0f),
-            new Vector4(-Mathf.Sin(newRotation.y),0f, Mathf.Cos(newRotation.y), 0f),
-            new Vector4(0f, 0f, 0f, 1f)
-        );
-
-           Matrix4x4 rotationMatrixZ = new Matrix4x4(
-            new Vector4(MathF.Cos(newRotation.z), -Mathf.Sin(newRotation.z), 0f, 0f),
-            new Vector4( Mathf.Sin(newRotation.z), Mathf.Cos(newRotation.z) , 0f, 0f),
-            new Vector4(0f, 0f, 1f, 0f),
-            new Vector4(0f, 0f, 0f, 1f)
-        );
-
-        Matrix4x4 rotationMatrix = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
-        rotationMatrix = rotationMatrix.transpose;
-
-        Matrix4x4 scaleMatrix = new Matrix4x4(
-            new Vector4(newScale.x, 0f, 0f, 0f),
-            new Vector4(0f, newScale.y, 0f, 0f),
-            new Vector4(0f, 0f, newScale.z, 0f),
-            new Vector4(0f, 0f, 0f, 1f)
-        );
-        scaleMatrix = scaleMatrix.transpose;
-
-        Matrix4x4 finalMatrix = positionMatrix;
-        finalMatrix *= rotationMatrix;
-        finalMatrix *= scaleMatrix;
+        finalMatrix = finalMatrix.transpose;
 
         return (finalMatrix);
     }
+
+    private Matrix4x4 CalculatePerspectiveProjectionMatrix(float fov, float asp, float near, float far)
+    {
+        Matrix4x4 finalMatrix = new Matrix4x4(
+            new Vector4(1/ asp * Mathf.Tan(fov/2), 0, 0, 0),
+            new Vector4(0,1/Mathf.Tan(fov/2),0,0),
+            new Vector4(0,0,(far+near)/(near-far), 2*far*near/(near-far)),
+            new Vector4(0f, 0f, -1f, 0f)
+        );
+        finalMatrix = finalMatrix.transpose;
+
+        return (finalMatrix);
+    }
+
 }
