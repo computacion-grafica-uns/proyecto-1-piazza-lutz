@@ -52,7 +52,7 @@ v 3.00 0.00 0.85 # 42
 
 # Caras (cada cara se compone de 3 vértices, en sentido antihorario)
 # Cara de la puerta principal
-f 1 9 8
+f 1 10 8
 f 1 3 10
 f 3 7 6
 f 3 4 7
@@ -63,8 +63,8 @@ f 13 22 21
 f 13 14 22
 f 14 18 17
 f 14 15 18
-f 19 25 22
-f 19 20 25
+f 19 23 22
+f 19 20 23
 f 15 24 23
 f 15 16 24
 f 16 8 24
