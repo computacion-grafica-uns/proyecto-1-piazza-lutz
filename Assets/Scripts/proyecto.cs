@@ -18,6 +18,11 @@ public class proyecto : MonoBehaviour
     private float anguloX = 20f; //pitch
     private float anguloY = 0f; //Yaw
 
+    private enum ModoCamara { FPS, ORBITAL}
+    private ModoCamara modoCamara = ModoCamara.ORBITAL;
+    private float mouseSensitivity = 2f;
+    private float velocidadMovimiento = 5f;
+
     //Todos los objetos
     private GameObject paredes;
     private GameObject piso;
@@ -38,16 +43,29 @@ public class proyecto : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-          // Movimiento con flechas del teclado
-        if (Input.GetKey(KeyCode.UpArrow)) anguloX += velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.DownArrow)) anguloX -= velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.LeftArrow)) anguloY -= velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.RightArrow)) anguloY += velocidadRotacion * Time.deltaTime;
+        // Cambiar de camara FPS <-> ORBITAL
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            modoCamara = (modoCamara == ModoCamara.FPS) ? ModoCamara.ORBITAL : ModoCamara.FPS;
 
-        // Limitar pitch (evita que se dé vuelta completamente)
-        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
+            if (modoCamara == ModoCamara.FPS)
+            {
+                // Posicionar la cámara al centro al cambiar a FPS
+                miCamara.transform.position = t.position + new Vector3(0, 1.5f, 0);
+                miCamara.transform.rotation = Quaternion.Euler(anguloX, anguloY, 0);
+            }
+        }
 
-        RecalcularMatrices();
+        if (modoCamara == ModoCamara.FPS)
+        {
+            ControlPrimeraPersona();
+        }
+        else
+        {
+            ControlOrbital();
+            RecalcularMatrices(); // Solo en modo orbital
+        }
+
     }
 
     private void generarEstructura()
@@ -61,7 +79,7 @@ public class proyecto : MonoBehaviour
         techo = lector.getGameObject();
         techo.transform.position = new Vector3(0, 2.5f, 0);
 
-        lector.read("pared");
+        lector.read("pared_fix_v2");
         paredes = lector.getGameObject();
         paredes.transform.position = new Vector3(0, 1.25f,0);
     }
@@ -71,7 +89,7 @@ public class proyecto : MonoBehaviour
         lector.read("toilet1");
         lector.setColor(1,1,1);
         toilet = lector.getGameObject();
-        toilet.transform.position = new Vector3(-4.5f, 1f, -2.5f);
+        toilet.transform.position = new Vector3(-4.5f, 0.6f, -2.5f);
         toilet.transform.rotation = Quaternion.Euler(0,-90,0);
         toilet.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
     }
@@ -84,10 +102,15 @@ public class proyecto : MonoBehaviour
 
         miCamara.GetComponent<Camera>().clearFlags = CameraClearFlags.SolidColor;
         miCamara.GetComponent<Camera>().backgroundColor = Color.black;
+
+        miCamara.transform.position = t.position + new Vector3(0, 2f, -distancia);
+        miCamara.transform.LookAt(t.position);
     }
 
     private void RecalcularMatrices()
     {
+        if (modoCamara == ModoCamara.FPS) return;
+
         float RadX = Mathf.Deg2Rad*anguloX;
         float RadY = Mathf.Deg2Rad*anguloY;
 
@@ -192,6 +215,56 @@ public class proyecto : MonoBehaviour
         finalMatrix *= scaleMatrix;
 
         return (finalMatrix);
+    }
+
+    private void ControlPrimeraPersona()
+    {
+        // Rotación con mouse (sin necesidad de botón derecho)
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+        anguloY += mouseX;
+        anguloX -= mouseY;
+        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
+
+        // Aplicar rotación a la cámara (FPS style)
+        miCamara.transform.rotation = Quaternion.Euler(anguloX, anguloY, 0);
+
+        // Movimiento con teclado (WASD)
+        Vector3 direccion = Vector3.zero;
+
+        if (Input.GetKey(KeyCode.W)) direccion += miCamara.transform.forward;
+        if (Input.GetKey(KeyCode.S)) direccion -= miCamara.transform.forward;
+        if (Input.GetKey(KeyCode.A)) direccion -= miCamara.transform.right;
+        if (Input.GetKey(KeyCode.D)) direccion += miCamara.transform.right;
+
+        direccion.y = 0; // Movimiento plano horizontal
+        direccion.Normalize();
+
+        miCamara.transform.position += direccion * velocidadMovimiento * Time.deltaTime;
+
+    }
+
+private void ControlOrbital()
+    {
+        // Movimiento con flechas del teclado
+        if (Input.GetKey(KeyCode.UpArrow)) anguloX += velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.DownArrow)) anguloX -= velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.LeftArrow)) anguloY -= velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.RightArrow)) anguloY += velocidadRotacion * Time.deltaTime;
+
+        // Rotacion mouse y click derecho
+        if (Input.GetMouseButton(1)) // Botón derecho del mouse
+        {
+            float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+            float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+            anguloY += mouseX;
+            anguloX -= mouseY;
+        }
+
+        // Limitar pitch (evita que se dé vuelta completamente)
+        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
     }
 
 }
