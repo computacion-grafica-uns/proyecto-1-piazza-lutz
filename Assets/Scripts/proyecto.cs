@@ -13,8 +13,12 @@ public class proyecto : MonoBehaviour
 
     // Objetos de la escena
     private List<GameObject> monoAmbiente = new List<GameObject>();
+    // Estructura
     private GameObject paredes, piso, techo;
+    // Baño
     private GameObject toilet, bath, mirror, sink;
+    // Dormitorio
+    private GameObject bed, nightstand, closet;
 
     // Camaras
     private Vector3 targetOrbital = Vector3.zero;
@@ -34,6 +38,7 @@ public class proyecto : MonoBehaviour
     {
         generarEstructura();
         GenerateBathroom();
+        GenerateBedroom();
         CreateCamera();
 
         RecalcularMatrices();
@@ -130,6 +135,23 @@ public class proyecto : MonoBehaviour
 
     private void GenerateBedroom()
     {
+        lector.read("bed2");
+        lector.setColor(0.85f, 0.4f, 0.4f);
+        bed = lector.getGameObject();
+        monoAmbiente.Add(bed);
+        CreateModel(bed, new Vector3(3.74f,-0.16f,-2.42f), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
+
+        lector.read("littleOne");
+        lector.setColor(0.85f, 0.65f, 0.5f);
+        nightstand = lector.getGameObject();
+        monoAmbiente.Add(nightstand);
+        CreateModel(nightstand, new Vector3(4.71f,0,-1.45f), new Vector3(0, Mathf.Deg2Rad*180,0), Vector3.one);
+
+        lector.read("closet");
+        lector.setColor(0.6f, 0.45f, 0.3f);
+        closet = lector.getGameObject();
+        monoAmbiente.Add(closet);
+        CreateModel(closet, new Vector3(1.2f,0,-1.79f), new Vector3(0, Mathf.Deg2Rad*0,0), new Vector3(0.87f,0.87f,0.87f));
 
     }
 
@@ -247,7 +269,7 @@ public class proyecto : MonoBehaviour
         if (Input.GetKey(KeyCode.S)) movimiento -= forwardFP;
         if (Input.GetKey(KeyCode.A)) movimiento -= right;
         if (Input.GetKey(KeyCode.D)) movimiento += right;
-        movimiento.y = 0f;
+        //movimiento.y = 0f;
 
         posCamaraFP += movimiento * moveSpeed * Time.deltaTime;
 
