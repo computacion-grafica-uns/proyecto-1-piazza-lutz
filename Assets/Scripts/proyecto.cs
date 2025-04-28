@@ -11,91 +11,83 @@ public class proyecto : MonoBehaviour
     private FileReader lector = new FileReader();
     private GameObject miCamara;
 
-    //Variables para la camara
-    private Transform t;
-    private float distancia = 10f;
-    private float velocidadRotacion = 50f;
-    private float anguloX = 20f; //pitch
-    private float anguloY = 0f; //Yaw
-
-    private enum ModoCamara { FPS, ORBITAL}
-    private ModoCamara modoCamara = ModoCamara.ORBITAL;
-    private float mouseSensitivity = 2f;
-    private float velocidadMovimiento = 5f;
-
-    //Todos los objetos
+    // Objetos de la escena
+    private List<GameObject> monoAmbiente = new List<GameObject>();
     private GameObject paredes;
     private GameObject piso;
     private GameObject techo;
     private GameObject toilet;
 
-    // Start is called before the first frame update
+    // Camaras
+    private Vector3 targetOrbital = Vector3.zero;
+    private float distancia = 10f;
+    private float velocidadRotacion = 100f;
+    private float mouseSensitivity = 1000f;
+    private float moveSpeed = 5f;
+    private float pitch = 20f; //pitch
+    private float yaw = 180f; //Yaw
+    private float pitchFP = 0f;
+    private float yawFP = 180f;
+    private Vector3 posCamara, posCamaraFP, forwardOrbital, forwardFP, right, up;
+    private bool isOrbital;
+
+    // Start
     void Start()
     {
         generarEstructura();
-
         GenerateBathroom();
-
         CreateCamera();
+
         RecalcularMatrices();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // Cambiar de camara FPS <-> ORBITAL
-        if (Input.GetKeyDown(KeyCode.V))
+        if (Input.GetKey(KeyCode.V))
         {
-            modoCamara = (modoCamara == ModoCamara.FPS) ? ModoCamara.ORBITAL : ModoCamara.FPS;
-
-            if (modoCamara == ModoCamara.FPS)
-            {
-                // Posicionar la cámara al centro al cambiar a FPS
-                miCamara.transform.position = t.position + new Vector3(0, 1.5f, 0);
-                miCamara.transform.rotation = Quaternion.Euler(anguloX, anguloY, 0);
-            }
+            isOrbital = !isOrbital;
         }
 
-        if (modoCamara == ModoCamara.FPS)
+        if (isOrbital)
         {
-            ControlPrimeraPersona();
+            camaraOrbital();
         }
         else
         {
-            ControlOrbital();
-            RecalcularMatrices(); // Solo en modo orbital
+            camaraFP();
         }
-
     }
 
     private void generarEstructura()
     {
         lector.read("piso");
-        lector.setColor(210f/255f, 105f / 255f, 30f/255f);
+        lector.setColor(210f / 255f, 105f / 255f, 30f / 255f);
         piso = lector.getGameObject();
-        t = piso.transform;
-        
+        CreateModel(piso, Vector3.zero, Vector3.zero, Vector3.one); 
+
         lector.read("techo");
+        lector.setColor(1,0,0);
         techo = lector.getGameObject();
-        techo.transform.position = new Vector3(0, 2.5f, 0);
+        CreateModel(techo, new Vector3(0,2.5f,0), Vector3.zero, Vector3.one);
 
         lector.read("pared_fix_v2");
         paredes = lector.getGameObject();
-        paredes.transform.position = new Vector3(0, 1.25f,0);
+        CreateModel(paredes, new Vector3(0, 1.25f, 0), Vector3.zero, Vector3.one);
+
+        monoAmbiente.Add(piso);
+        monoAmbiente.Add(techo);
+        monoAmbiente.Add(paredes);
     }
 
     private void GenerateBathroom()
     {
         lector.read("toilet1");
-        lector.setColor(1,1,1);
+        lector.setColor(1, 1, 1);
         toilet = lector.getGameObject();
-        toilet.transform.position = new Vector3(-4.5f, 0.6f, -2.5f);
-        toilet.transform.rotation = Quaternion.Euler(0,-90,0);
-        toilet.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
+        monoAmbiente.Add(toilet);
     }
 
-
-     private void CreateCamera()
+    private void CreateCamera()
     {
         miCamara = new GameObject();
         miCamara.AddComponent<Camera>();
@@ -103,168 +95,162 @@ public class proyecto : MonoBehaviour
         miCamara.GetComponent<Camera>().clearFlags = CameraClearFlags.SolidColor;
         miCamara.GetComponent<Camera>().backgroundColor = Color.black;
 
-        miCamara.transform.position = t.position + new Vector3(0, 2f, -distancia);
-        miCamara.transform.LookAt(t.position);
+        posCamara = new Vector3(0, 10f, 0);
+        posCamaraFP = new Vector3(0,1.7f,-3f);
+    }
+
+    private void CreateModel(GameObject obj, Vector3 pos, Vector3 rot, Vector3 esc)
+    {
+        Matrix4x4 modelMatrix = CreateModelMatrix(pos, rot, esc);
+        obj.GetComponent<Renderer>().material.SetMatrix("_ModelMatrix",  modelMatrix);
     }
 
     private void RecalcularMatrices()
     {
-        if (modoCamara == ModoCamara.FPS) return;
+        Vector3 camaraNueva = (isOrbital ? posCamara : posCamaraFP);
+        Vector3 target = (isOrbital ? targetOrbital : posCamaraFP + forwardFP);
+        Vector3 up = Vector3.up;
 
-        float RadX = Mathf.Deg2Rad*anguloX;
-        float RadY = Mathf.Deg2Rad*anguloY;
+        Matrix4x4 viewMatrix = CreateViewMatrix(camaraNueva, target, up);
+        Matrix4x4 projectionMatrix = CalculatePerspectiveProjectionMatrix(75f, (float)Screen.width / Screen.height, 0.1f, 100f);
 
-        Vector3 offset = new Vector3(
+        foreach (GameObject obj in monoAmbiente)
+        {
+            obj.GetComponent<Renderer>().material.SetMatrix("_ViewMatrix", viewMatrix);
+            obj.GetComponent<Renderer>().material.SetMatrix("_ProjectionMatrix", GL.GetGPUProjectionMatrix(projectionMatrix, true));
+        }
+    }
+
+    private Matrix4x4 CreateViewMatrix(Vector3 pos, Vector3 target, Vector3 up)
+    {
+        Vector3 forward = (target - pos).normalized;
+        Vector3 right = Vector3.Cross(up, forward).normalized;
+        Vector3 newUp = Vector3.Cross(forward, right);
+
+        Matrix4x4 view = new Matrix4x4(
+            new Vector4(right.x, newUp.x, -forward.x, 0f),
+            new Vector4(right.y, newUp.y, -forward.y, 0f),
+            new Vector4(right.z, newUp.z, -forward.z, 0f),
+            new Vector4(-Vector3.Dot(right, pos), -Vector3.Dot(newUp, pos), Vector3.Dot(forward, pos), 1f)
+        );
+
+        return view;
+    }
+
+    private Matrix4x4 CalculatePerspectiveProjectionMatrix(float fov, float aspect, float near, float far)
+    {
+        float f = 1f / Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad);
+
+        Matrix4x4 projection = new Matrix4x4();
+        projection[0, 0] = f / aspect;
+        projection[1, 1] = f;
+        projection[2, 2] = (far + near) / (near - far);
+        projection[2, 3] = (2f * far * near) / (near - far);
+        projection[3, 2] = -1f;
+        projection[3, 3] = 0f;
+
+        return projection;
+    }
+
+    private void camaraOrbital()
+    {
+        // Movimiento con flechas del teclado
+        if (Input.GetKey(KeyCode.UpArrow)) pitch += velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.DownArrow)) pitch -= velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.LeftArrow)) yaw += velocidadRotacion * Time.deltaTime;
+        if (Input.GetKey(KeyCode.RightArrow)) yaw -= velocidadRotacion * Time.deltaTime;
+
+        // Limitar pitch (evita que se dé vuelta completamente)
+        pitch = Mathf.Clamp(pitch, -15f, 60f);
+        float RadX = Mathf.Deg2Rad * pitch;
+        float RadY = Mathf.Deg2Rad * yaw;
+
+        forwardOrbital = new Vector3(
             distancia * MathF.Cos(RadX) * Mathf.Sin(RadY),
             distancia * Mathf.Sin(RadX),
             distancia * Mathf.Cos(RadX) * Mathf.Cos(RadY)
-            );
+        );
 
-        Vector3 pos = t.position + offset; 
-        Vector3 up = Vector3.up;
-       
-        Matrix4x4 viewMatrix = CreateViewMatrix(pos, t.position, up);
-        piso.GetComponent<Renderer>().material.SetMatrix("_ViewMatrix", viewMatrix);
-        techo.GetComponent<Renderer>().material.SetMatrix("_ViewMatrix", viewMatrix);
+        posCamara = targetOrbital + forwardOrbital;
+        up = Vector3.up;
 
-        float fov = 90;
-        float aspectRatio = 16 / (float)9;
-        float nearClipPlane = 0.1f;
-        float farClipPlane = 1000;
-
-        Matrix4x4 projectionMatrix = CalculatePerspectiveProjectionMatrix(fov, aspectRatio, nearClipPlane, farClipPlane);
-        piso.GetComponent<Renderer>().material.SetMatrix("_ProjectionMatrix", GL.GetGPUProjectionMatrix(projectionMatrix, true));
-        techo.GetComponent<Renderer>().material.SetMatrix("_ProjectionMatrix", GL.GetGPUProjectionMatrix(projectionMatrix, true));
-
-        miCamara.transform.position = pos;
-        miCamara.transform.LookAt(t.position);
+        RecalcularMatrices();
     }
 
-    private Matrix4x4 CreateViewMatrix(Vector3 pos, Vector3 targ, Vector3 up)
+    private void camaraFP()
     {
-        Vector3 forward = (targ - pos).normalized;
-        Vector3 right = Vector3.Cross(forward,up).normalized;
-        Matrix4x4 finalMatrix =  new Matrix4x4(
-            new Vector4(right.x, right.y, right.z, Vector3.Dot(-right,pos)),
-            new Vector4(up.x, up.y, up.z, Vector3.Dot(-up, pos)),
-            new Vector4(-forward.x, -forward.y, -forward.z, Vector3.Dot(forward, pos)),
-            new Vector4(0f, 0f, 0f, 1f)
+        yawFP += Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        pitchFP += Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        pitchFP = Mathf.Clamp(pitchFP, -89f, 89f);
+
+        float RadX = Mathf.Deg2Rad * pitchFP;
+        float RadY = Mathf.Deg2Rad * yawFP;
+
+        forwardFP = new Vector3(
+            Mathf.Cos(RadX) * Mathf.Sin(RadY),
+            Mathf.Sin(RadX),
+            Mathf.Cos(RadX) * Mathf.Cos(RadY)
         );
-        finalMatrix = finalMatrix.transpose;
 
-        return (finalMatrix);
-    }
+        right = Vector3.Cross(Vector3.up, forwardFP).normalized;
+        up = Vector3.Cross(forwardFP, right).normalized;
 
-    private Matrix4x4 CalculatePerspectiveProjectionMatrix(float fov, float asp, float near, float far)
-    {
-        Matrix4x4 finalMatrix = new Matrix4x4(
-            new Vector4(1/ asp * Mathf.Tan(fov/2), 0, 0, 0),
-            new Vector4(0,1/Mathf.Tan(fov/2),0,0),
-            new Vector4(0,0,(far+near)/(near-far), 2*far*near/(near-far)),
-            new Vector4(0f, 0f, -1f, 0f)
-        );
-        finalMatrix = finalMatrix.transpose;
+        Vector3 movimiento = Vector3.zero;
 
-        return (finalMatrix);
+        if (Input.GetKey(KeyCode.W)) movimiento += forwardFP;
+        if (Input.GetKey(KeyCode.S)) movimiento -= forwardFP;
+        if (Input.GetKey(KeyCode.A)) movimiento -= right;
+        if (Input.GetKey(KeyCode.D)) movimiento += right;
+        movimiento.y = 0f;
+
+        posCamaraFP += movimiento * moveSpeed * Time.deltaTime;
+
+        RecalcularMatrices();
     }
 
     private Matrix4x4 CreateModelMatrix(Vector3 newPosition, Vector3 newRotation, Vector3 newScale)
     {
         Matrix4x4 positionMatrix = new Matrix4x4(
-            new Vector4(1f, 0f, 0f, newPosition.x),
-            new Vector4(0f, 1f, 0f, newPosition.y),
-            new Vector4(0f, 0f, 1f, newPosition.z),
-            new Vector4(0f, 0f, 0f, 1f)
+            new Vector4(1f, 0f, 0f, newPosition.x), // Primera columna 
+            new Vector4(0f, 1f, 0f, newPosition.y), // Segunda columna 
+            new Vector4(0f, 0f, 1f, newPosition.z), // Tercera columna 
+            new Vector4(0f, 0f, 0f, 1f) // Cuarta columna 
         );
         positionMatrix = positionMatrix.transpose;
 
         Matrix4x4 rotationMatrixX = new Matrix4x4(
-            new Vector4(1f, 0f, 0f, 0f),
-            new Vector4(0f, Mathf.Cos(newRotation.x), -Mathf.Sin(newRotation.x), 0f),
-            new Vector4(0f, Mathf.Sin(newRotation.x), Mathf.Cos(newRotation.x), 0f),
-            new Vector4(0f, 0f, 0f, 1f)
+            new Vector4(1f, 0f, 0f, 0f), // Primera columna 
+            new Vector4(0f, Mathf.Cos(newRotation.x), -Mathf.Sin(newRotation.x), 0f), // Segunda columna 
+            new Vector4(0f, Mathf.Sin(newRotation.x), Mathf.Cos(newRotation.x), 0f), // Tercera columna 
+            new Vector4(0f, 0f, 0f, 1f) // Cuarta columna 
         );
-
-         Matrix4x4 rotationMatrixY = new Matrix4x4(
-            new Vector4(MathF.Cos(newRotation.y), 0f, Mathf.Sin(newRotation.y), 0f),
-            new Vector4(0f, 1f, 0f, 0f),
-            new Vector4(-Mathf.Sin(newRotation.y),0f, Mathf.Cos(newRotation.y), 0f),
-            new Vector4(0f, 0f, 0f, 1f)
+        Matrix4x4 rotationMatrixY = new Matrix4x4(
+            new Vector4(Mathf.Cos(newRotation.y), 0f, Mathf.Sin(newRotation.y), 0f), // Primera columna 
+            new Vector4(0f, 1f, 0f, 0f), // Segunda columma 
+            new Vector4(-Mathf.Sin(newRotation.y), 0f, Mathf.Cos(newRotation.y), 0f), // Tercera columna 
+            new Vector4(0f, 0f, 0f, 1f) // Cuarta columna 
         );
-
-           Matrix4x4 rotationMatrixZ = new Matrix4x4(
-            new Vector4(MathF.Cos(newRotation.z), -Mathf.Sin(newRotation.z), 0f, 0f),
-            new Vector4( Mathf.Sin(newRotation.z), Mathf.Cos(newRotation.z) , 0f, 0f),
-            new Vector4(0f, 0f, 1f, 0f),
-            new Vector4(0f, 0f, 0f, 1f)
+        Matrix4x4 rotationMatrixZ = new Matrix4x4(
+        new Vector4(Mathf.Cos(newRotation.z), -Mathf.Sin(newRotation.z), 0f, 0f), // Primera columna 
+        new Vector4(Mathf.Sin(newRotation.z), Mathf.Cos(newRotation.z), 0f, 0f), // Segunda columna 
+        new Vector4(0f, 0f, 1f, 0f), // Tercera columna 
+        new Vector4(0f, 0f, 0f, 1f) // Cuarta columna 
         );
 
         Matrix4x4 rotationMatrix = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
         rotationMatrix = rotationMatrix.transpose;
 
         Matrix4x4 scaleMatrix = new Matrix4x4(
-            new Vector4(newScale.x, 0f, 0f, 0f),
-            new Vector4(0f, newScale.y, 0f, 0f),
-            new Vector4(0f, 0f, newScale.z, 0f),
-            new Vector4(0f, 0f, 0f, 1f)
+        new Vector4(newScale.x, 0f, 0f, 0f), // Primera columna 
+        new Vector4(0f, newScale.y, 0f, 0f), // Segunda columna 
+        new Vector4(0f, 0f, newScale.z, 0f), // Tercera columna 
+        new Vector4(0f, 0f, 0f, 1f) // Cuarta columna 
         );
         scaleMatrix = scaleMatrix.transpose;
 
         Matrix4x4 finalMatrix = positionMatrix;
         finalMatrix *= rotationMatrix;
         finalMatrix *= scaleMatrix;
-
         return (finalMatrix);
     }
-
-    private void ControlPrimeraPersona()
-    {
-        // Rotación con mouse (sin necesidad de botón derecho)
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-        anguloY += mouseX;
-        anguloX -= mouseY;
-        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
-
-        // Aplicar rotación a la cámara (FPS style)
-        miCamara.transform.rotation = Quaternion.Euler(anguloX, anguloY, 0);
-
-        // Movimiento con teclado (WASD)
-        Vector3 direccion = Vector3.zero;
-
-        if (Input.GetKey(KeyCode.W)) direccion += miCamara.transform.forward;
-        if (Input.GetKey(KeyCode.S)) direccion -= miCamara.transform.forward;
-        if (Input.GetKey(KeyCode.A)) direccion -= miCamara.transform.right;
-        if (Input.GetKey(KeyCode.D)) direccion += miCamara.transform.right;
-
-        direccion.y = 0; // Movimiento plano horizontal
-        direccion.Normalize();
-
-        miCamara.transform.position += direccion * velocidadMovimiento * Time.deltaTime;
-
-    }
-
-private void ControlOrbital()
-    {
-        // Movimiento con flechas del teclado
-        if (Input.GetKey(KeyCode.UpArrow)) anguloX += velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.DownArrow)) anguloX -= velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.LeftArrow)) anguloY -= velocidadRotacion * Time.deltaTime;
-        if (Input.GetKey(KeyCode.RightArrow)) anguloY += velocidadRotacion * Time.deltaTime;
-
-        // Rotacion mouse y click derecho
-        if (Input.GetMouseButton(1)) // Botón derecho del mouse
-        {
-            float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-            float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-            anguloY += mouseX;
-            anguloX -= mouseY;
-        }
-
-        // Limitar pitch (evita que se dé vuelta completamente)
-        anguloX = Mathf.Clamp(anguloX, -60f, 60f);
-    }
-
 }

@@ -143,7 +143,7 @@ public class FileReader
 
     private void CreateMaterial()
     {
-        Material material = new Material(Shader.Find("ShaderBasico1"));
+        Material material = new Material(Shader.Find("ShaderBasico"));
         obj.GetComponent<MeshRenderer>().material = material;
     }
 
