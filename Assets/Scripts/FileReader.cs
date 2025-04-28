@@ -103,17 +103,38 @@ public class FileReader
                 if(lines[i].StartsWith("f "))
                 {
                     string[] cara = lines[i].Split(' '); //Separo los vertices
-                    int[] quadIndices = new int[3];
-                    for(int j = 0; j < 3; j++)
-                    {
-                        string[] partes = cara[j+1].Split('/');
-                        quadIndices[j] = int.Parse(partes[0])-1;
-                    }
 
-                    triangles[posTrig++] = quadIndices[0];
-                    triangles[posTrig++] = quadIndices[1];
-                    triangles[posTrig++] = quadIndices[2];
-                
+                    if(cara.Length == 5) // es un vector de 4 vertices
+                    {
+                        int[] quadIndices = new int[4];
+                        for(int j = 0; j < 4; j++)
+                        {
+                            string[] partes = cara[j+1].Split('/');
+                            quadIndices[j] = int.Parse(partes[0])-1;
+                        }
+
+                        triangles[posTrig] = quadIndices[0]; posTrig++;
+                        triangles[posTrig] = quadIndices[1]; posTrig++;
+                        triangles[posTrig] = quadIndices[2]; posTrig++;
+                        
+                        triangles[posTrig] = quadIndices[0]; posTrig++;
+                        triangles[posTrig] = quadIndices[2]; posTrig++;
+                        triangles[posTrig] = quadIndices[3]; posTrig++;
+                        
+                    }
+                    else
+                    {
+                        int[] quadIndices = new int[3];
+                        for(int j = 0; j < 3; j++)
+                        {
+                            string[] partes = cara[j+1].Split('/');
+                            quadIndices[j] = int.Parse(partes[0])-1;
+                        }
+
+                        triangles[posTrig++] = quadIndices[0];
+                        triangles[posTrig++] = quadIndices[1];
+                        triangles[posTrig++] = quadIndices[2];
+                    }
 
                 }
             }
@@ -125,7 +146,7 @@ public class FileReader
 
         for(int i = 0; i < vertices.Length; i++){
             vertices[i].x = vertices[i].x - reposx;
-            vertices[i].y = vertices[i].y - reposy;
+            //vertices[i].y = vertices[i].y - reposy;
             vertices[i].z = vertices[i].z - reposz;
 
             colores[i] = new Color(0.5f, 0.5f, 0.5f);

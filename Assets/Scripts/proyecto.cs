@@ -13,10 +13,8 @@ public class proyecto : MonoBehaviour
 
     // Objetos de la escena
     private List<GameObject> monoAmbiente = new List<GameObject>();
-    private GameObject paredes;
-    private GameObject piso;
-    private GameObject techo;
-    private GameObject toilet;
+    private GameObject paredes, piso, techo;
+    private GameObject toilet, bath, mirror, sink;
 
     // Camaras
     private Vector3 targetOrbital = Vector3.zero;
@@ -43,7 +41,7 @@ public class proyecto : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.V))
+        if (Input.GetKeyDown(KeyCode.V))
         {
             isOrbital = !isOrbital;
         }
@@ -56,23 +54,47 @@ public class proyecto : MonoBehaviour
         {
             camaraFP();
         }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            if (paredes.activeSelf)
+            {
+                paredes.SetActive(false);
+            }
+            else
+            {
+                paredes.SetActive(true);
+            }
+                
+        }
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            if (techo.activeSelf)
+            {
+                techo.SetActive(false);
+            }
+            else
+            {
+                techo.SetActive(true);
+            }
+        }
     }
 
     private void generarEstructura()
     {
         lector.read("piso");
-        lector.setColor(210f / 255f, 105f / 255f, 30f / 255f);
+        lector.setColor(0.7f,0.7f,0.7f);
         piso = lector.getGameObject();
-        CreateModel(piso, Vector3.zero, Vector3.zero, Vector3.one); 
+        CreateModel(piso, new Vector3(0,0,0), Vector3.zero, Vector3.one); 
 
         lector.read("techo");
-        lector.setColor(1,0,0);
+        lector.setColor(180f/255f,200f/255f,210f/255f);
         techo = lector.getGameObject();
-        CreateModel(techo, new Vector3(0,2.5f,0), Vector3.zero, Vector3.one);
+        CreateModel(techo, new Vector3(0,0,0), Vector3.zero, Vector3.one);
 
-        lector.read("pared_fix_v2");
+        lector.read("pared");
+        lector.setColor(196f/255f,216f/255f,226f/255f);
         paredes = lector.getGameObject();
-        CreateModel(paredes, new Vector3(0, 1.25f, 0), Vector3.zero, Vector3.one);
+        CreateModel(paredes, new Vector3(0, 0, 0), Vector3.zero, Vector3.one);
 
         monoAmbiente.Add(piso);
         monoAmbiente.Add(techo);
@@ -82,9 +104,33 @@ public class proyecto : MonoBehaviour
     private void GenerateBathroom()
     {
         lector.read("toilet1");
-        lector.setColor(1, 1, 1);
+        lector.setColor(0.9f, 0.9f, 0.9f);
         toilet = lector.getGameObject();
         monoAmbiente.Add(toilet);
+        CreateModel(toilet, new Vector3(-4.5f,0,-2.5f), new Vector3(0,Mathf.Deg2Rad*-90,0), new Vector3(0.9f,0.9f,0.9f));
+
+        lector.read("Bath");
+        lector.setColor(0.9f, 0.9f, 0.9f);
+        bath = lector.getGameObject();
+        monoAmbiente.Add(bath);
+        CreateModel(bath, new Vector3(-3.9f,0f,-1f), new Vector3(0,Mathf.Deg2Rad*-270,0), new Vector3(0.9f,0.9f,0.9f));
+
+        lector.read("mirror");
+        lector.setColor(0.9f,0.9f,0.9f);
+        mirror = lector.getGameObject();
+        monoAmbiente.Add(mirror);
+        CreateModel(mirror, new Vector3(-3f,0,-3), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
+
+        lector.read("sink");
+        lector.setColor(0.9f,0.9f,0.9f);
+        sink = lector.getGameObject();
+        monoAmbiente.Add(sink);
+        CreateModel(sink, new Vector3(-3f,0,-2.7f), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
+    }
+
+    private void GenerateBedroom()
+    {
+
     }
 
     private void CreateCamera()
@@ -96,7 +142,7 @@ public class proyecto : MonoBehaviour
         miCamara.GetComponent<Camera>().backgroundColor = Color.black;
 
         posCamara = new Vector3(0, 10f, 0);
-        posCamaraFP = new Vector3(0,1.7f,-3f);
+        posCamaraFP = new Vector3(0,1.6f,-3f);
     }
 
     private void CreateModel(GameObject obj, Vector3 pos, Vector3 rot, Vector3 esc)
