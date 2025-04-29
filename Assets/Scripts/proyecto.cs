@@ -251,7 +251,31 @@ public class proyecto : MonoBehaviour
 
     private void GeneratePotPlant()
     {
-        // QUIERO HACERLO ACÁ
+        lector.read("pot");
+        lector.setColor(0.3f, 0.05f, 0.05f);
+        pot = lector.getGameObject();
+
+        Vector3 posPot = new Vector3(0,1.12f,1.5f);
+        Vector3 rotPot = Vector3.zero;
+        Vector3 scalePot = new Vector3(0.1f,0.1f,0.1f); 
+
+        modelMatrixPot = CreateModelMatrix(posPot, rotPot, scalePot);
+        pot.GetComponent<Renderer>().material.SetMatrix("_ModelMatrix", modelMatrixPot);
+        
+        lector.read("plant");
+        lector.setColor(0.05f, 0.3f, 0.05f);
+        planta = lector.getGameObject();
+
+        Vector3 relativePosition = new Vector3(0, 4f, -0.3f); // posición relativa al pot
+        Vector3 relativeRotation = new Vector3(Mathf.Deg2Rad*-90, 0, 0); // rotación relativa
+        Vector3 relativeScale = new Vector3(3f, 3f, 3f);
+
+        Matrix4x4 relativeMatrix = CreateModelMatrix(relativePosition, relativeRotation, relativeScale);
+        Matrix4x4 modelMatrixPlanta = modelMatrixPot * relativeMatrix;
+        planta.GetComponent<Renderer>().material.SetMatrix("_ModelMatrix", modelMatrixPlanta);
+
+        monoAmbiente.Add(pot);
+        monoAmbiente.Add(planta);
     }
 
     private void CreateCamera()
