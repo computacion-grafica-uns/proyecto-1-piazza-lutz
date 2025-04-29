@@ -19,10 +19,15 @@ public class proyecto : MonoBehaviour
     private GameObject toilet, bath, mirror, sink;
     // Dormitorio
     private GameObject bed, nightstand, closet;
+    // Comedor
+    private GameObject table, chair1, chair2, chair3;
+    // Sala de estar
+    private GameObject sofa, cafeTable;
+    private GameObject horno, alacena1, alacena2, mesada, heladera;
 
     // Camaras
     private Vector3 targetOrbital = Vector3.zero;
-    private float distancia = 10f;
+    private float distancia = 7f;
     private float velocidadRotacion = 100f;
     private float mouseSensitivity = 1000f;
     private float moveSpeed = 5f;
@@ -36,10 +41,13 @@ public class proyecto : MonoBehaviour
     // Start
     void Start()
     {
-        generarEstructura();
+        GenerateStruct();
         GenerateBathroom();
         GenerateBedroom();
+        GenerateDining();
         CreateCamera();
+        GenerateLiving();
+        GenerateKitchen();
 
         RecalcularMatrices();
     }
@@ -84,7 +92,7 @@ public class proyecto : MonoBehaviour
         }
     }
 
-    private void generarEstructura()
+    private void GenerateStruct()
     {
         lector.read("piso");
         lector.setColor(0.7f,0.7f,0.7f);
@@ -124,13 +132,13 @@ public class proyecto : MonoBehaviour
         lector.setColor(0.9f,0.9f,0.9f);
         mirror = lector.getGameObject();
         monoAmbiente.Add(mirror);
-        CreateModel(mirror, new Vector3(-3f,0,-3), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
+        CreateModel(mirror, new Vector3(-3f,0,-2.98f), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
 
         lector.read("sink");
         lector.setColor(0.9f,0.9f,0.9f);
         sink = lector.getGameObject();
         monoAmbiente.Add(sink);
-        CreateModel(sink, new Vector3(-3f,0,-2.7f), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
+        CreateModel(sink, new Vector3(-3f,0,-2.69f), new Vector3(0, Mathf.Deg2Rad*-90,0), Vector3.one);
     }
 
     private void GenerateBedroom()
@@ -153,6 +161,85 @@ public class proyecto : MonoBehaviour
         monoAmbiente.Add(closet);
         CreateModel(closet, new Vector3(1.2f,0,-1.79f), new Vector3(0, Mathf.Deg2Rad*0,0), new Vector3(0.87f,0.87f,0.87f));
 
+    }
+
+    private void GenerateDining()
+    {
+        lector.read("chair4");
+        lector.setColor(0.6f, 0.45f, 0.4f);
+        chair1 = lector.getGameObject();
+        CreateModel(chair1, new Vector3(1,0,1.5f), new Vector3(0, Mathf.Deg2Rad*180), Vector3.one);
+
+        lector.read("chair4");
+        lector.setColor(0.6f, 0.45f, 0.4f);
+        chair2 = lector.getGameObject();
+        CreateModel(chair2, new Vector3(-1,0,1.5f), Vector3.zero, Vector3.one);
+
+        lector.read("chair4");
+        lector.setColor(0.6f, 0.45f, 0.4f);
+        chair3 = lector.getGameObject();
+        CreateModel(chair3, new Vector3(0,0,0.5f), new Vector3(0, Mathf.Deg2Rad*-90), Vector3.one);
+
+        lector.read("table");
+        lector.setColor(0.60f, 0.45f, 0.4f);
+        table = lector.getGameObject();
+        CreateModel(table, new Vector3(0,0,1.5f), Vector3.zero, Vector3.one);
+
+        monoAmbiente.Add(chair1);
+        monoAmbiente.Add(chair2);
+        monoAmbiente.Add(chair3);
+        monoAmbiente.Add(table);
+    }
+
+    private void GenerateLiving()
+    {
+        lector.read("sofaWithLegs");
+        lector.setColor(0,0.7f,0.8f);
+        sofa = lector.getGameObject();
+        CreateModel(sofa, new Vector3(3.45f,0,2.40f),new Vector3(0,Mathf.Deg2Rad*90,0), Vector3.one);
+
+        lector.read("table");
+        lector.setColor(0.5f,0.3f,0.4f);
+        cafeTable = lector.getGameObject();
+        CreateModel(cafeTable, new Vector3(3.45f,0,0.7f),new Vector3(0,0,0), new Vector3(1, 0.4f, 0.5f));
+
+        monoAmbiente.Add(sofa);
+        monoAmbiente.Add(cafeTable);
+    }
+
+    private void GenerateKitchen()
+    {
+        lector.read("UpperCabinet");
+        lector.setColor(0.65f, 0.50f, 0.45f);
+        alacena1 = lector.getGameObject();
+        CreateModel(alacena1, new Vector3(-3.6f,0.8f,2.67f), new Vector3(0,Mathf.Deg2Rad*90), new Vector3(1,0.6f,1));
+
+        lector.read("UpperCabinet");
+        lector.setColor(0.65f, 0.50f, 0.45f);
+        alacena2 = lector.getGameObject();
+        CreateModel(alacena2, new Vector3(-4.5f,0.8f,2.67f), new Vector3(0,Mathf.Deg2Rad*90), new Vector3(1,0.6f,1));
+
+        lector.read("KitchenCabinetRounded");
+        lector.setColor(0.85f,0.6f,0.75f);
+        mesada = lector.getGameObject();
+        CreateModel(mesada, new Vector3(-3.85f,0,1.85f),Vector3.zero,Vector3.one);
+
+        lector.read("KitchenStoveWithOven");
+        lector.setColor(0.4f,0.4f,0.5f);
+        horno = lector.getGameObject();
+        CreateModel(horno, new Vector3(-4.5f,0,0.2f),Vector3.zero,Vector3.one);
+
+        lector.read("Fridge");
+        lector.setColor(1,1,7f);
+        heladera = lector.getGameObject();
+        CreateModel(heladera, new Vector3(-2.3f,0,2.5f), new Vector3(0,Mathf.Deg2Rad*90), Vector3.one);
+
+        
+        monoAmbiente.Add(alacena1);
+        monoAmbiente.Add(alacena2);
+        monoAmbiente.Add(mesada);
+        monoAmbiente.Add(horno);
+        monoAmbiente.Add(heladera);
     }
 
     private void CreateCamera()
@@ -269,7 +356,7 @@ public class proyecto : MonoBehaviour
         if (Input.GetKey(KeyCode.S)) movimiento -= forwardFP;
         if (Input.GetKey(KeyCode.A)) movimiento -= right;
         if (Input.GetKey(KeyCode.D)) movimiento += right;
-        //movimiento.y = 0f;
+        movimiento.y = 0f;
 
         posCamaraFP += movimiento * moveSpeed * Time.deltaTime;
 
