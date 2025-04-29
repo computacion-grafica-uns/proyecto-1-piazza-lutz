@@ -37,9 +37,6 @@ public class proyecto : MonoBehaviour
     private float yawFP = 180f;
     private Vector3 posCamara, posCamaraFP, forwardOrbital, forwardFP, right, up;
 
-    //Matriz jerarquica
-    private Matrix4x4 modelMatrixPot;
-
     private bool isOrbital;
 
     // Start
@@ -47,6 +44,7 @@ public class proyecto : MonoBehaviour
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+        
         GenerateStruct();
         GenerateBathroom();
         GenerateBedroom();
@@ -259,7 +257,7 @@ public class proyecto : MonoBehaviour
         Vector3 rotPot = Vector3.zero;
         Vector3 scalePot = new Vector3(0.1f,0.1f,0.1f); 
 
-        modelMatrixPot = CreateModelMatrix(posPot, rotPot, scalePot);
+        Matrix4x4 modelMatrixPot = CreateModelMatrix(posPot, rotPot, scalePot);
         pot.GetComponent<Renderer>().material.SetMatrix("_ModelMatrix", modelMatrixPot);
         
         lector.read("plant");
