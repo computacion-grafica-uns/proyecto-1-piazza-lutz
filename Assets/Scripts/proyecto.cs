@@ -29,8 +29,8 @@ public class proyecto : MonoBehaviour
     private Vector3 targetOrbital = Vector3.zero;
     private float distancia = 7f;
     private float velocidadRotacion = 100f;
-    private float mouseSensitivity = 1000f;
-    private float moveSpeed = 5f;
+    private float mouseSensitivity = 800f;
+    private float moveSpeed = 1.8f;
     private float pitch = 20f; //pitch
     private float yaw = 180f; //Yaw
     private float pitchFP = 0f;
@@ -41,6 +41,8 @@ public class proyecto : MonoBehaviour
     // Start
     void Start()
     {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
         GenerateStruct();
         GenerateBathroom();
         GenerateBedroom();
@@ -251,7 +253,7 @@ public class proyecto : MonoBehaviour
         miCamara.GetComponent<Camera>().backgroundColor = Color.black;
 
         posCamara = new Vector3(0, 10f, 0);
-        posCamaraFP = new Vector3(0,1.6f,-3f);
+        posCamaraFP = new Vector3(0,1.65f,-3f);
     }
 
     private void CreateModel(GameObject obj, Vector3 pos, Vector3 rot, Vector3 esc)
@@ -316,7 +318,7 @@ public class proyecto : MonoBehaviour
         if (Input.GetKey(KeyCode.RightArrow)) yaw -= velocidadRotacion * Time.deltaTime;
 
         // Limitar pitch (evita que se dé vuelta completamente)
-        pitch = Mathf.Clamp(pitch, -15f, 60f);
+        pitch = Mathf.Clamp(pitch, -0.5f, 60f);
         float RadX = Mathf.Deg2Rad * pitch;
         float RadY = Mathf.Deg2Rad * yaw;
 
@@ -358,7 +360,24 @@ public class proyecto : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) movimiento += right;
         movimiento.y = 0f;
 
-        posCamaraFP += movimiento * moveSpeed * Time.deltaTime;
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            posCamaraFP += movimiento * moveSpeed * 2.5f * Time.deltaTime;
+        }
+        else
+        {
+            posCamaraFP += movimiento * moveSpeed * Time.deltaTime;
+        }
+
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            posCamaraFP.y = 0.8f;
+        }
+        else
+        {
+            posCamaraFP.y = 1.65f;
+        }
+        
 
         RecalcularMatrices();
     }
