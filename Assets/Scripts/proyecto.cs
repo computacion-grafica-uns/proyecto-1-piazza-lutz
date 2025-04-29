@@ -20,7 +20,7 @@ public class proyecto : MonoBehaviour
     // Dormitorio
     private GameObject bed, nightstand, closet;
     // Comedor
-    private GameObject table, chair1, chair2, chair3;
+    private GameObject table, chair1, chair2, chair3, pot, planta;
     // Sala de estar
     private GameObject sofa, cafeTable;
     private GameObject horno, alacena1, alacena2, mesada, heladera;
@@ -36,6 +36,10 @@ public class proyecto : MonoBehaviour
     private float pitchFP = 0f;
     private float yawFP = 180f;
     private Vector3 posCamara, posCamaraFP, forwardOrbital, forwardFP, right, up;
+
+    //Matriz jerarquica
+    private Matrix4x4 modelMatrixPot;
+
     private bool isOrbital;
 
     // Start
@@ -50,6 +54,7 @@ public class proyecto : MonoBehaviour
         CreateCamera();
         GenerateLiving();
         GenerateKitchen();
+        GeneratePotPlant();
 
         RecalcularMatrices();
     }
@@ -242,6 +247,11 @@ public class proyecto : MonoBehaviour
         monoAmbiente.Add(mesada);
         monoAmbiente.Add(horno);
         monoAmbiente.Add(heladera);
+    }
+
+    private void GeneratePotPlant()
+    {
+        // QUIERO HACERLO ACÁ
     }
 
     private void CreateCamera()
