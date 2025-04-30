@@ -64,9 +64,6 @@ public class FileReader
         vertices = new Vector3[cantVert];
         triangles = new int[cantTrig*6]; 
 
-        Debug.Log("Cantidad triangulos: " + cantTrig);
-        Debug.Log("Cantidad vertices: " + cantVert);
-                    
 
 
         for(int i = 0; i < lines.Length; i++)
