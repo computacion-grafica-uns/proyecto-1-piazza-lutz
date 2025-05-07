@@ -188,7 +188,7 @@ public class proyecto : MonoBehaviour
         lector.read("table");
         lector.setColor(0.60f, 0.45f, 0.4f);
         table = lector.getGameObject();
-        CreateModel(table, new Vector3(0,0,1.5f), Vector3.zero, Vector3.one);
+        CreateModel(table, new Vector3(0,0,1.5f), Vector3.zero, new Vector3(1, 0.8f, 1));
 
         monoAmbiente.Add(chair1);
         monoAmbiente.Add(chair2);
